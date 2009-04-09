@@ -185,13 +185,13 @@ class CallbackComponent extends Object
                 if (isset($conditionals['only'])) {
                     if (!in_array($controller->action, (array)$conditionals['only'])) {
                         $ok = false;
-                        break;
+                        continue;
                     }
                 }
                 if (isset($conditionals['except'])) {
                     if (in_array($controller->action, (array)$conditionals['except'])) {
                         $ok = false;
-                        break;
+                        continue;
                     }
                 }
                 if (isset($conditionals['if'])) {
@@ -201,6 +201,7 @@ class CallbackComponent extends Object
                             break;
                         }
                     }
+                    if (!$ok) continue;
                 }
                 if (isset($conditionals['unless'])) {
                     foreach ((array)$conditionals['unless'] as $method) {
@@ -209,6 +210,7 @@ class CallbackComponent extends Object
                             break;
                         }
                     }
+                    if (!$ok) continue;
                 }
             }
             
