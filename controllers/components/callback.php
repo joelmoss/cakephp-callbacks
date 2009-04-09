@@ -56,63 +56,13 @@ class CallbackComponent extends Object
 	    }
         
         $this->__mergeVars($controller);
+        $this->__order($controller);
     }
 /**
- * Calls callbacks defined in properties of components, AppController, and
- * controller - in that order.
- *
- * @access private
- */
-	private function __callbacks($controller, $callbackName)
-	{
-	    $callbacks = $controller->$callbackName;
-	    
-        foreach ((array)$callbacks as $callback => $conditionals) {
-            $ok = true;
-            if (is_array($conditionals)) {
-                if (!empty($conditionals)) {
-                    if (isset($conditionals['only'])) {
-                        if (!in_array($controller->action, (array)$conditionals['only'])) {
-                            $ok = false;
-                            break;
-                        }
-                    }
-                    if (isset($conditionals['except'])) {
-                        if (in_array($controller->action, (array)$conditionals['except'])) {
-                            $ok = false;
-                            break;
-                        }
-                    }
-                    if (isset($conditionals['if'])) {
-                        foreach ((array)$conditionals['if'] as $method) {
-                            if (!$controller->dispatchMethod("_$method")) {
-                                $ok = false;
-                                break;
-                            }
-                        }
-                    }
-                    if (isset($conditionals['unless'])) {
-                        foreach ((array)$conditionals['unless'] as $method) {
-                            if ($controller->dispatchMethod("_$method")) {
-                                $ok = false;
-                                break;
-                            }
-                        }
-                    }
-                }
-            } else {
-                $callback = $conditionals;
-            }
-            
-            if ($ok) {
-                $controller->dispatchMethod('_' . $callback);
-            }
-        }
-	}
-/**
- * Merge callbacks props from AppController and PluginAppController.
+ * Merge callbacks props from Components, AppController and PluginAppController.
  * (Idea taken from Controller)
  *
+ * @param object $controller
  * @return void
  * @access protected
  */
@@ -152,9 +102,133 @@ class CallbackComponent extends Object
     			}
             }
 	    }
+	}   
+/**
+ * Orders the callbacks according to the 'order' attribute
+ * 
+ * @param object $controller
+ */
+    private function __order($controller)
+    {
+        foreach ($this->__callbacks as $var) {
+            if (isset($controller->{$var})) {
+                $callbacks = $lastCallbacks = $firstCallbacks = array();
+                foreach ((array)$controller->{$var} as $k => $v) {
+                    if (is_array($v)) {
+                        if (isset($v['order']) && $v['order'] == 'last') {
+                            unset($v['order']);
+                            $lastCallbacks[$k] = $v;
+                        } elseif (isset($v['order']) && $v['order'] == 'first') {
+                            unset($v['order']);
+                            $firstCallbacks[$k] = $v;
+                        } else {
+                            $callbacks[$k] = $v;
+                        }
+                    } else {
+                        $callbacks[$v] = array();
+                    }
+                }
+
+                $i = count($firstCallbacks) + 1;
+                foreach ($callbacks as $cb => $d) {
+                    if (!isset($callbacks[$cb]['order'])) {
+                        $callbacks[$cb]['order'] = $i;
+                    }
+                    $i++;
+                }
+                
+                $i = count($firstCallbacks);
+                foreach (array_reverse($firstCallbacks) as $cb => $d) {
+                    $d['order'] = $i;
+                    $callbacks = $callbacks + array($cb => $d);
+                    $i--;
+                }
+                
+                $i = count($firstCallbacks) + count($callbacks);
+                foreach ($lastCallbacks as $cb => $d) {
+                    $d['order'] = $i;
+                    $callbacks = $callbacks + array($cb => $d);
+                    $i++;
+                }
+                
+                uasort($callbacks, array($this, '_cmp'));
+                $controller->{$var} = $callbacks;
+            }
+        }
+    }
+    
+    private function _cmp($a, $b)
+    {
+        if ($a['order'] == $b['order']) {
+            return 0;
+        } elseif ($a['order'] < $b['order']) {
+            return -1;
+        } elseif ($a['order'] > $b['order']) {
+            return 1;
+        }
+    }
+/**
+ * Calls callbacks defined in properties of components, AppController, and
+ * controller - in that order.
+ * 
+ * @param object $controller
+ * @param string $callbackName The name of the callback
+ * @access private
+ */
+	private function __callbacks($controller, $callbackName)
+	{
+	    $callbacks = $controller->$callbackName;
+	    
+        foreach ((array)$callbacks as $callback => $conditionals) {
+            $ok = true;
+            if (!empty($conditionals)) {
+                if (isset($conditionals['only'])) {
+                    if (!in_array($controller->action, (array)$conditionals['only'])) {
+                        $ok = false;
+                        break;
+                    }
+                }
+                if (isset($conditionals['except'])) {
+                    if (in_array($controller->action, (array)$conditionals['except'])) {
+                        $ok = false;
+                        break;
+                    }
+                }
+                if (isset($conditionals['if'])) {
+                    foreach ((array)$conditionals['if'] as $method) {
+                        if (!$controller->dispatchMethod("_$method")) {
+                            $ok = false;
+                            break;
+                        }
+                    }
+                }
+                if (isset($conditionals['unless'])) {
+                    foreach ((array)$conditionals['unless'] as $method) {
+                        if ($controller->dispatchMethod("_$method")) {
+                            $ok = false;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if ($ok) {
+                if (method_exists($controller, '_' . $callback)) {
+                    $controller->dispatchMethod('_' . $callback);
+                } else {
+                    foreach ($controller->Component->_loaded as $component) {
+                        if (method_exists($component, '_' . $callback)) {
+                            $component->dispatchMethod('_' . $callback);
+                        }
+                    }
+                }
+            }
+        }
 	}
 /**
  * beforeFilter
+ * 
+ * @param object $controller
  */
     function startup($controller)
     {
@@ -164,6 +238,8 @@ class CallbackComponent extends Object
     }
 /**
  * beforeRender
+ * 
+ * @param object $controller
  */
     function beforeRender($controller)
     {
@@ -173,6 +249,8 @@ class CallbackComponent extends Object
     }
 /**
  * afterFilter
+ * 
+ * @param object $controller
  */
     function shutdown($controller)
     {
