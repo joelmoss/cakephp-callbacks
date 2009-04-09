@@ -47,44 +47,44 @@ class CallbackComponent extends Object
     
     public function initialize($controller, $settings = array())
     {
-        $this->controller = $controller;
-        
 		foreach ($this->__callbacks as $var) {
-		    if (!isset($this->controller->{$var})) {
-		        $this->controller->{$var} = array();
+		    if (!isset($controller->{$var})) {
+		        $controller->{$var} = array();
 	        } else {
-	            $this->controller->{$var} = (array)$this->controller->{$var};
+	            $controller->{$var} = (array)$controller->{$var};
 	        }
 	    }
         
-        $this->__mergeVars();
+        $this->__mergeVars($controller);
     }
 /**
  * Calls callbacks defined in properties of controllers.
  *
  * @access private
  */
-	private function __callbacks($callbacks)
+	private function __callbacks($controller, $callbackName)
 	{
+	    $callbacks = $controller->$callbackName;
+	    
         foreach ((array)$callbacks as $callback => $conditionals) {
             $ok = true;
             if (is_array($conditionals)) {
                 if (!empty($conditionals)) {
                     if (isset($conditionals['only'])) {
-                        if (!in_array($this->controller->action, (array)$conditionals['only'])) {
+                        if (!in_array($controller->action, (array)$conditionals['only'])) {
                             $ok = false;
                             break;
                         }
                     }
                     if (isset($conditionals['except'])) {
-                        if (in_array($this->controller->action, (array)$conditionals['except'])) {
+                        if (in_array($controller->action, (array)$conditionals['except'])) {
                             $ok = false;
                             break;
                         }
                     }
                     if (isset($conditionals['if'])) {
                         foreach ((array)$conditionals['if'] as $method) {
-                            if (!$this->controller->dispatchMethod("_$method")) {
+                            if (!$controller->dispatchMethod("_$method")) {
                                 $ok = false;
                                 break;
                             }
@@ -92,7 +92,7 @@ class CallbackComponent extends Object
                     }
                     if (isset($conditionals['unless'])) {
                         foreach ((array)$conditionals['unless'] as $method) {
-                            if ($this->controller->dispatchMethod("_$method")) {
+                            if ($controller->dispatchMethod("_$method")) {
                                 $ok = false;
                                 break;
                             }
@@ -104,7 +104,7 @@ class CallbackComponent extends Object
             }
             
             if ($ok) {
-                $this->controller->dispatchMethod('_' . $callback);
+                $controller->dispatchMethod('_' . $callback);
             }
         }
 	}
@@ -115,19 +115,19 @@ class CallbackComponent extends Object
  * @return void
  * @access protected
  */
-	function __mergeVars()
+	function __mergeVars($controller)
 	{
-	    $parent = get_parent_class($this->controller);
+	    $parent = get_parent_class($controller);
 	    
-	    if ($this->controller->plugin) {
+	    if ($controller->plugin) {
 	        $pluginVars = get_class_vars($parent);
 	        $appVars = get_class_vars(get_parent_class($parent));
 	        
     		foreach ($this->__callbacks as $var) {
     			if (!empty($pluginVars[$var])) {
     			    $pluginVars[$var] = (array)$pluginVars[$var];
-    			    $diff = array_diff($pluginVars[$var], $this->controller->{$var});
-    				$this->controller->{$var} = Set::merge($diff, $this->controller->{$var});
+    			    $diff = array_diff($pluginVars[$var], $controller->{$var});
+    				$controller->{$var} = Set::merge($diff, $controller->{$var});
     			}
     		}
 	    } else {
@@ -137,36 +137,36 @@ class CallbackComponent extends Object
 		foreach ($this->__callbacks as $var) {
 			if (!empty($appVars[$var])) {
 			    $appVars[$var] = (array)$appVars[$var];
-			    $diff = array_diff($appVars[$var], $this->controller->{$var});
-				$this->controller->{$var} = Set::merge($diff, $this->controller->{$var});
+			    $diff = array_diff($appVars[$var], $controller->{$var});
+				$controller->{$var} = Set::merge($diff, $controller->{$var});
 			}
 		}
 	}
 /**
  * beforeFilter
  */
-    function startup()
+    function startup($controller)
     {
-        if (isset($this->controller->beforeFilter)) {
-            return $this->__callbacks($this->controller->beforeFilter);
+        if (isset($controller->beforeFilter)) {
+            return $this->__callbacks($controller, 'beforeFilter');
         }
     }
 /**
  * beforeRender
  */
-    function beforeRender()
+    function beforeRender($controller)
     {
-        if (isset($this->controller->beforeRender)) {
-            return $this->__callbacks($this->controller->beforeRender);
+        if (isset($controller->beforeRender)) {
+            return $this->__callbacks($controller, 'beforeRender');
         }
     }
 /**
  * afterFilter
  */
-    function shutdown()
+    function shutdown($controller)
     {
-        if (isset($this->controller->afterFilter)) {
-            return $this->__callbacks($this->controller->afterFilter);
+        if (isset($controller->afterFilter)) {
+            return $this->__callbacks($controller, 'afterFilter');
         }
     }
 }
