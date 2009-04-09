@@ -58,7 +58,8 @@ class CallbackComponent extends Object
         $this->__mergeVars($controller);
     }
 /**
- * Calls callbacks defined in properties of controllers.
+ * Calls callbacks defined in properties of components, AppController, and
+ * controller - in that order.
  *
  * @access private
  */
@@ -126,7 +127,7 @@ class CallbackComponent extends Object
     		foreach ($this->__callbacks as $var) {
     			if (!empty($pluginVars[$var])) {
     			    $pluginVars[$var] = (array)$pluginVars[$var];
-    			    $diff = array_diff($pluginVars[$var], $controller->{$var});
+    			    $diff = array_diff_assoc($pluginVars[$var], $controller->{$var});
     				$controller->{$var} = Set::merge($diff, $controller->{$var});
     			}
     		}
@@ -137,10 +138,20 @@ class CallbackComponent extends Object
 		foreach ($this->__callbacks as $var) {
 			if (!empty($appVars[$var])) {
 			    $appVars[$var] = (array)$appVars[$var];
-			    $diff = array_diff($appVars[$var], $controller->{$var});
+			    $diff = array_diff_assoc($appVars[$var], $controller->{$var});
 				$controller->{$var} = Set::merge($diff, $controller->{$var});
 			}
 		}
+		
+	    foreach ($controller->Component->_loaded as $component) {
+	        foreach ($this->__callbacks as $var) {
+    			if (isset($component->$var) && !empty($component->$var)) {
+    			    $component->$var = (array)$component->$var;
+    			    $diff = array_diff_assoc($component->$var, $controller->{$var});
+    				$controller->{$var} = Set::merge($diff, $controller->{$var});
+    			}
+            }
+	    }
 	}
 /**
  * beforeFilter
