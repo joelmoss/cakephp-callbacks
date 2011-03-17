@@ -1,4 +1,5 @@
 <?php
+App::import('Controller', 'CallbackApp');
 /**
 * Test Controller
 */
@@ -6,6 +7,7 @@ class FourthCallbackController extends CallbackAppController
 {
     var $uses = null;
     var $components = array('Callback.Callback');
+    var $layout = false;
     
     var $beforeFilter = array(
         'beforeFilter'

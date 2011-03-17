@@ -1,4 +1,5 @@
 <?php
+App::import('Controller', 'CallbackTwoApp');
 /**
 * Test Controller
 */
@@ -6,6 +7,7 @@ class FifthCallbackController extends CallbackTwoAppController
 {
     var $uses = null;
     var $components = array('Callback.Callback');
+    var $layout = false;
     
     var $beforeFilter = 'beforeFilter';
     var $afterFilter = array('afterFilter', 'afterFilterTwo');

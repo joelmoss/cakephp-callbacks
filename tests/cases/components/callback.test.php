@@ -1,118 +1,138 @@
 <?php
 /**
 * Callback Component Test Case
-* 
 */
-class CallbackTestCase extends ControllerTestCase
+class CallbackTestCase extends CakeTestCase
 {
     function setup()
     {
-        Configure::write('controllerPaths', array(dirname(dirname(dirname(__FILE__))) . DS . 'test_app' . DS . 'controllers' . DS));
-        Configure::write('viewPaths', array(dirname(dirname(dirname(__FILE__))) . DS . 'test_app' . DS . 'views' . DS));
+        App::build(array(
+            'views' => array(
+                dirname(dirname(dirname(__FILE__))) . DS . 'test_app' . DS . 'views' . DS
+            ),
+            'controllers' => array(
+                dirname(dirname(dirname(__FILE__))) . DS . 'test_app' . DS . 'controllers' . DS
+            )
+        ));        
     }
     
 	function testCallbacks()
 	{
-	    $this->initAction('/first_callback', array('return' => 'vars'));
+	    App::import('Controller', 'FirstCallback');
+	    $this->Controller = new FirstCallbackController($this);
+	    $this->Controller->actionForTest('/first_callback');
 	    
 	    $expected = array(
 	        'beforeFilter' => true,
 	        'beforeRender' => true,
 	        'afterFilter' => true
 	    );
-	    $this->assertSame($expected, $this->Controller->callbackResults);
+	    $this->assertEqual($expected, $this->Controller->callbackResults);
 	}
 	
-	function testCallbacksAsStrings()
-	{
-	    $this->initAction('/second_callback', array('return' => 'vars'));
-	    
-	    $expected = array(
-	        'beforeFilter' => true,
-	        'beforeRender' => true,
-	        'afterFilter' => true
-	    );
-	    $this->assertSame($expected, $this->Controller->callbackResults);
-	}
-	
-	function testMultipleCallbacks()
-	{
-	    $this->initAction('/third_callback', array('return' => 'vars'));
-	    
-	    $expected = array(
-	        'beforeFilter' => true,
-	        'beforeFilterTwo' => true,
-	        'beforeRender' => true,
-	        'beforeRenderTwo' => true,
-	        'afterFilter' => true,
-	        'afterFilterTwo' => true
-	    );
-	    $this->assertSame($expected, $this->Controller->callbackResults);
-	}
-	
+    function testCallbacksAsStrings()
+    {
+	    App::import('Controller', 'SecondCallback');
+	    $this->Controller = new SecondCallbackController($this);
+        $this->Controller->actionForTest('/second_callback');
+        
+        $expected = array(
+            'beforeFilter' => true,
+            'beforeRender' => true,
+            'afterFilter' => true
+        );
+        $this->assertEqual($expected, $this->Controller->callbackResults);
+    }
+    
+    function testMultipleCallbacks()
+    {
+	    App::import('Controller', 'ThirdCallback');
+	    $this->Controller = new ThirdCallbackController($this);
+        $this->Controller->actionForTest('/third_callback');
+        
+        $expected = array(
+            'beforeFilter' => true,
+            'beforeFilterTwo' => true,
+            'beforeRender' => true,
+            'beforeRenderTwo' => true,
+            'afterFilter' => true,
+            'afterFilterTwo' => true
+        );
+        $this->assertEqual($expected, $this->Controller->callbackResults);
+    }
+    
     function testRecursiveCallbacks()
     {
-        App::import('Controller', 'CallbackApp');
-        $this->initAction('/fourth_callback', array('return' => 'vars'));
-
-	    $expected = array(
-	        'beforeFilterApp' => true,
-	        'beforeFilter' => true,
-	        'beforeRenderApp' => true,
-	        'beforeRender' => true,
-	        'afterFilterApp' => true,
-	        'afterFilter' => true
-	    );
-	    $this->assertSame($expected, $this->Controller->callbackResults);
-    }
+	    App::import('Controller', 'FourthCallback');
+	    $this->Controller = new FourthCallbackController($this);
+        $this->Controller->actionForTest('/fourth_callback');
     
+        $expected = array(
+            'beforeFilterApp' => true,
+            'beforeFilter' => true,
+            'beforeRenderApp' => true,
+            'beforeRender' => true,
+            'afterFilterApp' => true,
+            'afterFilter' => true
+        );
+        $this->assertEqual($expected, $this->Controller->callbackResults);
+    }
+        
     function testRecursiveCallbacksAsStrings()
     {
-        App::import('Controller', 'CallbackTwoApp');
-        $this->initAction('/fifth_callback', array('return' => 'vars'));
-
-	    $expected = array(
-	        'beforeFilterApp' => true,
-	        'beforeFilter' => true,
-	        'beforeRenderApp' => true,
-	        'beforeRender' => true,
-	        'afterFilterApp' => true,
-	        'afterFilter' => true,
-	        'afterFilterTwo' => true
-	    );
-	    $this->assertSame($expected, $this->Controller->callbackResults);
-    }
+	    App::import('Controller', 'FifthCallback');
+	    $this->Controller = new FifthCallbackController($this);
+        $this->Controller->actionForTest('/fifth_callback');
     
+        $expected = array(
+            'beforeFilterApp' => true,
+            'beforeFilter' => true,
+            'beforeRenderApp' => true,
+            'beforeRender' => true,
+            'afterFilterApp' => true,
+            'afterFilter' => true,
+            'afterFilterTwo' => true
+        );
+        $this->assertEqual($expected, $this->Controller->callbackResults);
+    }
+        
     function testCallbackExcept()
     {
-        $this->initAction('/sixth_callback', array('return' => 'vars'));
-
-	    $expected = array(
-	        'beforeRender' => true,
-	    );
-	    $this->assertSame($expected, $this->Controller->callbackResults);
-    }
+	    App::import('Controller', 'SixthCallback');
+	    $this->Controller = new SixthCallbackController($this);
+        $this->Controller->actionForTest('/sixth_callback');
     
+        $expected = array(
+            'beforeRender' => true,
+        );
+        $this->assertEqual($expected, $this->Controller->callbackResults);
+    }
+        
     function testCallbackOnly()
     {
-        $this->initAction('/sixth_callback/view', array('return' => 'vars'));
-
-	    $expected = array(
-	        'beforeFilter' => true,
-	        'beforeRender' => true,
-	        'afterFilter' => true
-	    );
-	    $this->assertSame($expected, $this->Controller->callbackResults);
-    }
+	    App::import('Controller', 'SixthCallback');
+	    $this->Controller = new SixthCallbackController($this);
+        $this->Controller->actionForTest('/sixth_callback/view');
     
+        $expected = array(
+            'beforeFilter' => true,
+            'beforeRender' => true,
+            'afterFilter' => true
+        );
+        $this->assertEqual($expected, $this->Controller->callbackResults);
+    }
+        
     function testCallbackIfUnless()
     {
-        $this->initAction('/seventh_callback', array('return' => 'vars'));
-
-	    $expected = array(
-	        'beforeRender' => true,
-	        'afterFilter' => true
-	    );
-	    $this->assertSame($expected, $this->Controller->callbackResults);
+	    App::import('Controller', 'SeventhCallback');
+	    $this->Controller = new SeventhCallbackController($this);
+        $this->Controller->actionForTest('/seventh_callback');
+    
+        $expected = array(
+            'beforeRender' => true,
+            'afterFilter' => true
+        );
+        $this->assertEqual($expected, $this->Controller->callbackResults);
     }
+        
 }

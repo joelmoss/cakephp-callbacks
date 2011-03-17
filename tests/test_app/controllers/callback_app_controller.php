@@ -1,8 +1,9 @@
 <?php
+App::import('Controller', 'Test');
 /**
 * Test Controller for extending
 */
-class CallbackAppController extends Controller
+class CallbackAppController extends TestController
 {
     var $beforeFilter = array(
         'beforeFilterApp'

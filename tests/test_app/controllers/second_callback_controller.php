@@ -1,11 +1,13 @@
 <?php
+App::import('Controller', 'Test');
 /**
 * Test Controller
 */
-class SecondCallbackController extends Controller
+class SecondCallbackController extends TestController
 {
     var $uses = null;
     var $components = array('Callback.Callback');
+    var $layout = false;
     
     var $beforeFilter = 'beforeFilter';
     var $afterFilter = 'afterFilter';
