@@ -69,7 +69,7 @@ class CallbackComponent extends Object
 	function __mergeVars($controller)
 	{
 	    $parent = get_parent_class($controller);
-	    
+
 	    if ($controller->plugin) {
 	        $pluginVars = get_class_vars($parent);
 	        $appVars = get_class_vars(get_parent_class($parent));
@@ -81,10 +81,22 @@ class CallbackComponent extends Object
     				$controller->{$var} = Set::merge($diff, $controller->{$var});
     			}
     		}
-	    } else {
+		} else {
 	        $appVars = get_class_vars($parent);
 	    }
-
+	    
+        if (get_parent_class(get_parent_class($parent)) == 'Controller') {
+		    $appAppVars = get_class_vars(get_parent_class($parent));
+		    
+    		foreach ($this->__callbacks as $var) {
+    			if (!empty($appAppVars[$var])) {
+    			    $appAppVars[$var] = (array)$appAppVars[$var];
+    			    $diff = array_diff_assoc($appAppVars[$var], $controller->{$var});
+    				$controller->{$var} = Set::merge($diff, $controller->{$var});
+    			}
+    		}
+	    }
+	    
 		foreach ($this->__callbacks as $var) {
 			if (!empty($appVars[$var])) {
 			    $appVars[$var] = (array)$appVars[$var];
